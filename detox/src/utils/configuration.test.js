@@ -2,7 +2,7 @@ const _ = require('lodash');
 const path = require('path');
 const schemes = require('./configurations.mock');
 
-jest.mock('./utils/argparse');
+jest.mock('./argparse');
 
 describe('configuration', () => {
   let args;
@@ -22,12 +22,13 @@ describe('configuration', () => {
   });
 
   describe('composeArtifactsConfig', () => {
+    const composeArtifactsConfig = (...args) => configuration._internals.composeArtifactsConfig(...args);
+
     it('should produce a default config', () => {
-      expect(configuration.composeArtifactsConfig({
+      expect(composeArtifactsConfig({
         configurationName: 'abracadabra',
         deviceConfig: {},
         detoxConfig: {},
-        cliConfig: {},
       })).toMatchObject({
         pathBuilder: expect.objectContaining({
           rootDir: expect.stringMatching(/^artifacts[\\\/]abracadabra\.\d{4}/),
@@ -37,7 +38,7 @@ describe('configuration', () => {
     });
 
     it('should use artifacts config from the selected configuration', () => {
-      expect(configuration.composeArtifactsConfig({
+      expect(composeArtifactsConfig({
         configurationName: 'abracadabra',
         deviceConfig: {
           artifacts: {
@@ -47,7 +48,6 @@ describe('configuration', () => {
           }
         },
         detoxConfig: {},
-        cliConfig: {}
       })).toMatchObject({
         pathBuilder: expect.objectContaining({
           rootDir: expect.stringMatching(/^otherPlace[\\\/]abracadabra\.\d{4}/),
@@ -57,7 +57,7 @@ describe('configuration', () => {
     });
 
     it('should use global artifacts config', () => {
-      expect(configuration.composeArtifactsConfig({
+      expect(composeArtifactsConfig({
         configurationName: 'abracadabra',
         deviceConfig: {},
         detoxConfig: {
@@ -67,7 +67,6 @@ describe('configuration', () => {
             pathBuilder: _.noop,
           }
         },
-        cliConfig: {}
       })).toMatchObject({
         pathBuilder: expect.objectContaining({
           rootDir: expect.stringMatching(/^otherPlace[\\\/]abracadabra\.\d{4}/),
@@ -77,18 +76,19 @@ describe('configuration', () => {
     });
 
     it('should use CLI config', () => {
-      expect(configuration.composeArtifactsConfig({
+      Object.assign(args, {
+        'artifacts-location': 'otherPlace',
+        'record-logs': 'all',
+        'take-screenshots': 'all',
+        'record-videos': 'all',
+        'record-performance': 'all',
+        'record-timeline': 'all',
+      });
+
+      expect(composeArtifactsConfig({
         configurationName: 'abracadabra',
         deviceConfig: {},
         detoxConfig: {},
-        cliConfig: {
-          artifactsLocation: 'otherPlace',
-          recordLogs: 'all',
-          takeScreenshots: 'all',
-          recordVideos: 'all',
-          recordPerformance: 'all',
-          recordTimeline: 'all',
-        }
       })).toMatchObject({
         pathBuilder: expect.objectContaining({
           rootDir: expect.stringMatching(/^otherPlace[\\\/]abracadabra\.\d{4}/),
@@ -98,11 +98,10 @@ describe('configuration', () => {
     });
 
     it('should prefer CLI config over selected configuration over global config', () => {
-      expect(configuration.composeArtifactsConfig({
+      args['artifacts-location'] = 'cli';
+
+      expect(composeArtifactsConfig({
         configurationName: 'priority',
-        cliConfig: {
-          artifactsLocation: 'cli',
-        },
         deviceConfig: {
           artifacts: {
             rootDir: 'configuration',
@@ -137,20 +136,19 @@ describe('configuration', () => {
 
     it('should resolve path builder from string (absolute path)', () => {
       const FakePathBuilder = require('../artifacts/__mocks__/FakePathBuilder');
-      expect(configuration.composeArtifactsConfig({
+      expect(composeArtifactsConfig({
         configurationName: 'customization',
         deviceConfig: {
           artifacts: {
-            pathBuilder: path.join(__dirname, 'artifacts/__mocks__/FakePathBuilder')
+            pathBuilder: path.join(__dirname, '../artifacts/__mocks__/FakePathBuilder')
           },
         },
         detoxConfig: {},
-        cliConfig: {},
       }).pathBuilder).toBeInstanceOf(FakePathBuilder);
     });
 
     it('should resolve path builder from string (relative path)', () => {
-      expect(configuration.composeArtifactsConfig({
+      expect(composeArtifactsConfig({
         configurationName: 'customization',
         deviceConfig: {
           artifacts: {
@@ -158,7 +156,6 @@ describe('configuration', () => {
           },
         },
         detoxConfig: {},
-        cliConfig: {},
       })).toMatchObject({
         pathBuilder: expect.objectContaining({
           "name": expect.any(String),
@@ -168,7 +165,7 @@ describe('configuration', () => {
     });
 
     it('should not append configuration with timestamp if rootDir ends with slash', () => {
-      expect(configuration.composeArtifactsConfig({
+      expect(composeArtifactsConfig({
         configurationName: 'customization',
         deviceConfig: {
           artifacts: {
@@ -176,18 +173,16 @@ describe('configuration', () => {
           },
         },
         detoxConfig: {},
-        cliConfig: {},
       })).toMatchObject({
         rootDir: '.artifacts/',
       });
     });
 
     it('should allow passing custom plugin configurations', () => {
-      expect(configuration.composeArtifactsConfig({
+      args['take-screenshots'] = 'all';
+
+      expect(composeArtifactsConfig({
         configurationName: 'custom',
-        cliConfig: {
-          takeScreenshots: 'all',
-        },
         detoxConfig: {
           artifacts: {
             rootDir: 'configuration',
@@ -225,7 +220,9 @@ describe('configuration', () => {
   });
 
   describe('composeBehaviorConfig', () => {
-    let composed = () => configuration.composeBehaviorConfig({
+    const composeBehaviorConfig = (...args) => configuration._internals.composeBehaviorConfig(...args);
+
+    let composed = () => composeBehaviorConfig({
       deviceConfig,
       detoxConfig,
       userParams,
@@ -337,6 +334,8 @@ describe('configuration', () => {
   });
 
   describe('composeDeviceConfig', () => {
+    const composeDeviceConfig = (...args) => configuration._internals.composeDeviceConfig(...args);
+
     let configs;
 
     beforeEach(() => {
@@ -348,13 +347,13 @@ describe('configuration', () => {
 
     describe('validation', () => {
       it('should throw if no configurations are passed', () => {
-        expect(() => configuration.composeDeviceConfig({
+        expect(() => composeDeviceConfig({
           configurations: {},
         })).toThrowError(/There are no device configurations/);
       });
 
       it('should throw if configuration driver (type) is not defined', () => {
-        expect(() => configuration.composeDeviceConfig({
+        expect(() => composeDeviceConfig({
           configurations: {
             undefinedDriver: {
               device: { type: 'iPhone X' },
@@ -364,7 +363,7 @@ describe('configuration', () => {
       });
 
       it('should throw if device query is not defined', () => {
-        expect(() => configuration.composeDeviceConfig({
+        expect(() => composeDeviceConfig({
           configurations: {
             undefinedDeviceQuery: {
               type: 'ios.simulator',
@@ -381,7 +380,7 @@ describe('configuration', () => {
         it('should return it', () => {
           const singleDeviceConfig = configs[0];
 
-          expect(configuration.composeDeviceConfig({
+          expect(composeDeviceConfig({
             configurations: {singleDeviceConfig }
           })).toBe(singleDeviceConfig);
         });
@@ -390,7 +389,7 @@ describe('configuration', () => {
       describe('when there is more than one config', () => {
         it('should throw if there is more than one config', () => {
           const [config1, config2] = configs;
-          expect(() => configuration.composeDeviceConfig({
+          expect(() => composeDeviceConfig({
             configurations: { config1, config2 },
           })).toThrowError(/Cannot determine/);
         });
@@ -399,7 +398,7 @@ describe('configuration', () => {
           it('should select that configuration', () => {
             const [config1, config2] = configs;
 
-            expect(configuration.composeDeviceConfig({
+            expect(composeDeviceConfig({
               selectedConfiguration: 'config1',
               configurations: { config1, config2 },
             })).toEqual(config1);
@@ -423,7 +422,7 @@ describe('configuration', () => {
       });
 
       it('should return that config', () => {
-        expect(configuration.composeDeviceConfig({
+        expect(composeDeviceConfig({
           configurations: sampleConfigs
         })).toEqual(sampleConfigs.config2);
       });
@@ -432,7 +431,7 @@ describe('configuration', () => {
         beforeEach(() => { args['device-name'] = 'Override'; });
 
         it('should return that config with an overriden device query', () => {
-          expect(configuration.composeDeviceConfig({
+          expect(composeDeviceConfig({
             configurations: sampleConfigs
           })).toEqual({
             ...sampleConfigs.config2,
@@ -444,7 +443,9 @@ describe('configuration', () => {
   });
 
   describe('composeSessionConfig', () => {
-    const compose = () => configuration.composeSessionConfig({
+    const composeSessionConfig = (...args) => configuration._internals.composeSessionConfig(...args);
+
+    const compose = () => composeSessionConfig({
       detoxConfig,
       deviceConfig,
     });
@@ -504,19 +505,21 @@ describe('configuration', () => {
 
   describe('composeDetoxConfig', () => {
     it('should throw if no config given', async () => {
-      await expect(configuration.composeDetoxConfig()).rejects.toThrowError(
+      await expect(configuration.composeDetoxConfig({})).rejects.toThrowError(
         /No configuration was passed/
       );
     });
 
     it('should return a complete Detox config', async () => {
       const config = await configuration.composeDetoxConfig({
-        configurations: {
-          simple: {
-            type: 'ios.simulator',
-            device: 'iPhone X',
+        override: {
+          configurations: {
+            simple: {
+              type: 'ios.simulator',
+              device: 'iPhone X',
+            },
           },
-        },
+        }
       });
 
       expect(config).toMatchObject({

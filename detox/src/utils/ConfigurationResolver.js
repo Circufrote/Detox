@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const { cosmiconfigSync } = require('cosmiconfig');
 
 const lookupOrder = [
   '.detoxrc',

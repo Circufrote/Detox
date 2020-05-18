@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const { cosmiconfig } = require('cosmiconfig');
 const DetoxConfigError = require('../errors/DetoxConfigError');
 const uuid = require('./uuid');
 const resolveModuleFromPath = require('./resolveModuleFromPath');
@@ -12,6 +13,13 @@ const LogArtifactPlugin = require('../artifacts/log/LogArtifactPlugin');
 const ScreenshotArtifactPlugin = require('../artifacts/screenshot/ScreenshotArtifactPlugin');
 const VideoArtifactPlugin = require('../artifacts/video/VideoArtifactPlugin');
 const ArtifactPathBuilder = require('../artifacts/utils/ArtifactPathBuilder');
+
+const fileLocation = Symbol('fileLocation');
+const explorer = cosmiconfig('detox')
+
+function negateDefined(x) {
+  return x !== undefined ? !x : undefined;
+}
 
 function throwOnEmptyDevice() {
   throw new DetoxConfigError(`'device' property is empty, should hold the device query to run on (e.g. { "type": "iPhone 11 Pro" }, { "avdName": "Nexus_5X_API_29" })`);
@@ -39,7 +47,7 @@ function composeBehaviorConfig({ detoxConfig, deviceConfig, userParams }) {
       init: {
         exposeGlobals: userParams.initGlobals,
         launchApp: userParams.launchApp,
-        reinstallApp: !userParams.reuse,
+        reinstallApp: negateDefined(userParams.reuse),
       },
     },
     deviceConfig.behavior,
@@ -75,8 +83,23 @@ async function composeSessionConfig({ detoxConfig, deviceConfig }) {
   return session;
 }
 
-async function composeDetoxConfig(detoxConfig, userParams, cliConfig = getArtifactsCliConfig()) {
-  if (!detoxConfig) {
+async function loadDetoxConfig(detoxConfigLocation) {
+
+}
+
+async function composeDetoxConfig({
+  configPath,
+  selectedConfiguration,
+  override,
+  userParams,
+}) {
+  const detoxConfig = _.merge(
+    await loadDetoxConfig(configPath),
+    override,
+    selectedConfiguration && { selectedConfiguration },
+  );
+
+  if (_.isEmpty(detoxConfig)) {
     throw new Error(`No configuration was passed to detox, make sure you pass a detoxConfig when calling 'detox.init(detoxConfig)'`);
   }
 
@@ -89,7 +112,6 @@ async function composeDetoxConfig(detoxConfig, userParams, cliConfig = getArtifa
     configurationName,
     detoxConfig,
     deviceConfig,
-    cliConfig,
   });
 
   const behaviorConfig = composeBehaviorConfig({
@@ -159,8 +181,9 @@ function composeArtifactsConfig({
   configurationName,
   deviceConfig,
   detoxConfig,
-  cliConfig,
 }) {
+  const cliConfig = getArtifactsCliConfig();
+
   const artifactsConfig = _.defaultsDeep(
       extendArtifactsConfig({
         rootDir: cliConfig.artifactsLocation,
@@ -244,9 +267,12 @@ function resolveArtifactsPathBuilder(artifactsConfig) {
 
 module.exports = {
   throwOnEmptyBinaryPath,
-  composeArtifactsConfig,
-  composeBehaviorConfig,
-  composeDeviceConfig,
-  composeSessionConfig,
   composeDetoxConfig,
+
+  _internals: {
+    composeArtifactsConfig,
+    composeBehaviorConfig,
+    composeDeviceConfig,
+    composeSessionConfig,
+  },
 };
