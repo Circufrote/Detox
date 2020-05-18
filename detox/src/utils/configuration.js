@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const { cosmiconfig } = require('cosmiconfig');
 const DetoxConfigError = require('../errors/DetoxConfigError');
+const DetoxRuntimeError = require('../errors/DetoxRuntimeError');
 const uuid = require('./uuid');
 const resolveModuleFromPath = require('./resolveModuleFromPath');
 const argparse = require('./argparse');
@@ -15,7 +16,6 @@ const VideoArtifactPlugin = require('../artifacts/video/VideoArtifactPlugin');
 const ArtifactPathBuilder = require('../artifacts/utils/ArtifactPathBuilder');
 
 const fileLocation = Symbol('fileLocation');
-const explorer = cosmiconfig('detox')
 
 function negateDefined(x) {
   return x !== undefined ? !x : undefined;
@@ -83,24 +83,37 @@ async function composeSessionConfig({ detoxConfig, deviceConfig }) {
   return session;
 }
 
-async function loadDetoxConfig(detoxConfigLocation) {
+async function loadDetoxConfig(detoxConfigPath, cwd) {
+  const explorer = cosmiconfig('detox')
 
+  return detoxConfigPath
+    ? await explorer.load(detoxConfigPath)
+    : await explorer.search(cwd);
 }
 
 async function composeDetoxConfig({
-  configPath,
+  cwd = process.cwd(),
   selectedConfiguration,
   override,
   userParams,
 }) {
+  const configPath = argparse.getArgValue('config-path');
+  const cosmiResult = await loadDetoxConfig(configPath, cwd);
+  const externalConfig = cosmiResult && cosmiResult.config;
   const detoxConfig = _.merge(
-    await loadDetoxConfig(configPath),
+    externalConfig,
     override,
-    selectedConfiguration && { selectedConfiguration },
   );
 
   if (_.isEmpty(detoxConfig)) {
-    throw new Error(`No configuration was passed to detox, make sure you pass a detoxConfig when calling 'detox.init(detoxConfig)'`);
+    throw new DetoxRuntimeError({
+      message: 'Cannot start Detox without a configuration',
+      hint: 'Make sure your package.json has "detox" section, or there\'s .detoxrc file in the working directory',
+    });
+  }
+
+  if (selectedConfiguration) {
+    detoxConfig.selectedConfiguration = selectedConfiguration;
   }
 
   const deviceConfig = composeDeviceConfig(detoxConfig);
