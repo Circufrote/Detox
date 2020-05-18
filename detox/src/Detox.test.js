@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const configuration = require('./configuration');
+const configuration = require('./utils/configuration');
 const testSummaries = require('./artifacts/__mocks__/testSummaries.mock');
 
 jest.mock('./utils/logger');

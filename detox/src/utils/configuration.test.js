@@ -17,7 +17,7 @@ describe('configuration', () => {
     deviceConfig = {};
     userParams = undefined;
 
-    require('./utils/argparse').getArgValue.mockImplementation(key => args[key]);
+    require('./argparse').getArgValue.mockImplementation(key => args[key]);
     configuration = require('./configuration');
   });
 
@@ -136,7 +136,7 @@ describe('configuration', () => {
     });
 
     it('should resolve path builder from string (absolute path)', () => {
-      const FakePathBuilder = require('./artifacts/__mocks__/FakePathBuilder');
+      const FakePathBuilder = require('../artifacts/__mocks__/FakePathBuilder');
       expect(configuration.composeArtifactsConfig({
         configurationName: 'customization',
         deviceConfig: {

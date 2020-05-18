@@ -2,7 +2,7 @@ const _ = require('lodash');
 const funpermaproxy = require('funpermaproxy');
 const Detox = require('./Detox');
 const DetoxConstants = require('./DetoxConstants');
-const configuration = require('./configuration');
+const configuration = require('./utils/configuration');
 const log = require('./utils/logger').child({ __filename });
 
 const _detox = Symbol('detox');

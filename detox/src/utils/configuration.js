@@ -1,17 +1,17 @@
 const _ = require('lodash');
-const DetoxConfigError = require('./errors/DetoxConfigError');
-const uuid = require('./utils/uuid');
-const resolveModuleFromPath = require('./utils/resolveModuleFromPath');
-const argparse = require('./utils/argparse');
+const DetoxConfigError = require('../errors/DetoxConfigError');
+const uuid = require('./uuid');
+const resolveModuleFromPath = require('./resolveModuleFromPath');
+const argparse = require('./argparse');
 const getPort = require('get-port');
-const buildDefaultArtifactsRootDirpath = require('./artifacts/utils/buildDefaultArtifactsRootDirpath');
+const buildDefaultArtifactsRootDirpath = require('../artifacts/utils/buildDefaultArtifactsRootDirpath');
 
-const TimelineArtifactPlugin = require('./artifacts/timeline/TimelineArtifactPlugin');
-const InstrumentsArtifactPlugin = require('./artifacts/instruments/InstrumentsArtifactPlugin');
-const LogArtifactPlugin = require('./artifacts/log/LogArtifactPlugin');
-const ScreenshotArtifactPlugin = require('./artifacts/screenshot/ScreenshotArtifactPlugin');
-const VideoArtifactPlugin = require('./artifacts/video/VideoArtifactPlugin');
-const ArtifactPathBuilder = require('./artifacts/utils/ArtifactPathBuilder');
+const TimelineArtifactPlugin = require('../artifacts/timeline/TimelineArtifactPlugin');
+const InstrumentsArtifactPlugin = require('../artifacts/instruments/InstrumentsArtifactPlugin');
+const LogArtifactPlugin = require('../artifacts/log/LogArtifactPlugin');
+const ScreenshotArtifactPlugin = require('../artifacts/screenshot/ScreenshotArtifactPlugin');
+const VideoArtifactPlugin = require('../artifacts/video/VideoArtifactPlugin');
+const ArtifactPathBuilder = require('../artifacts/utils/ArtifactPathBuilder');
 
 function throwOnEmptyDevice() {
   throw new DetoxConfigError(`'device' property is empty, should hold the device query to run on (e.g. { "type": "iPhone 11 Pro" }, { "avdName": "Nexus_5X_API_29" })`);

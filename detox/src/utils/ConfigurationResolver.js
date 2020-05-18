@@ -1,5 +1,14 @@
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const { cosmiconfigSync } = require('cosmiconfig');
+
+const lookupOrder = [
+  '.detoxrc',
+  '.detoxrc.js',
+  '.detoxrc.json',
+  'package.json',
+];
+
 const packageJson = 'package.json';
 const detoxRc = '.detoxrc';
 
@@ -9,6 +18,15 @@ class ConfigurationResolver {
   }
 
   getDetoxConfiguration(configPath) {
+    configPath = configPath || findUp.sync(lookupOrder);
+    if (!configPath) {
+      return null;
+    }
+
+    const config = path.extname(configPath) === '.js'
+      ? this.requireJS(configPath)
+      : this.requireJSON(configPath);
+
     if (configPath) {
       return this.loadConfiguration(configPath);
     }
@@ -18,6 +36,14 @@ class ConfigurationResolver {
       return detox;
     }
     return this.loadDetoxrcConfiguration()
+  }
+
+  requireJS(configPath) {
+
+  }
+
+  requireJSON(configPath) {
+
   }
 
   loadDetoxrcConfiguration() {
