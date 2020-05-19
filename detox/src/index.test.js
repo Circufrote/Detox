@@ -28,7 +28,7 @@ describe('index', () => {
     };
 
     logger = require('./utils/logger');
-    configuration = require('./utils/configuration');
+    configuration = require('./configuration');
     configuration.composeDetoxConfig.mockImplementation(async () => detoxConfig);
 
     Detox = require('./Detox');

@@ -6,7 +6,6 @@ const environment = require('../src/utils/environment');
 const DetoxConfigError = require('../src/errors/DetoxConfigError');
 
 const log = require('../src/utils/logger').child({ __filename });
-const {getDetoxConfig, getDefaultConfiguration, getConfigurationByKey} = require('../src/utils/configurationUtils');
 const shellQuote = require('./utils/shellQuote');
 
 module.exports.command = 'test';

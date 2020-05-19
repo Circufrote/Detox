@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const configurationsMock = require('../utils/configurations.mock');
+const configurationsMock = require('../configuration/configurations.mock');
 
 const validScheme = configurationsMock.validOneDeviceAndSession;
 const invalidDeviceNoBinary = configurationsMock.invalidDeviceNoBinary;
