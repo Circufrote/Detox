@@ -1,9 +1,9 @@
 const _ = require('lodash');
 const path = require('path');
 
-jest.mock('./argparse');
+jest.mock('../utils/argparse');
 
-describe('configuration', () => {
+describe('composeDetoxConfig', () => {
   let args;
   let configuration;
   let detoxConfig;
@@ -27,53 +27,11 @@ describe('configuration', () => {
       );
     });
 
-    it('should implicitly use package.json config if it has "detox" section', async () => {
-      const config = await configuration.composeDetoxConfig({
-        cwd: path.join(__dirname, '__mocks__/configuration/priority'),
-      });
-
-      expect(config).toMatchObject({
-        deviceConfig: expect.objectContaining({
-          device: 'Hello from package.json',
-        }),
-      });
-    });
-
-    it('should implicitly use .detoxrc if package.json has no "detox" section', async () => {
-      const config = await configuration.composeDetoxConfig({
-        cwd: path.join(__dirname, '__mocks__/configuration/detoxrc')
-      });
-
-      expect(config).toMatchObject({
-        deviceConfig: expect.objectContaining({
-          device: 'Hello from .detoxrc',
-        }),
-      });
-    });
-
-    it('should explicitly use the specified config (via env-cli args)', async () => {
-      args['config-path'] = path.join(__dirname, '__mocks__/configuration/priority/detox-config.json');
-      const config = await configuration.composeDetoxConfig({});
-
-      expect(config).toMatchObject({
-        deviceConfig: expect.objectContaining({
-          device: 'Hello from detox-config.json',
-        }),
-      });
-    });
-
-    it('should throw if explicitly given config is not found', async () => {
-      args['config-path'] = path.join(__dirname, '__mocks__/configuration/non-existent.json');
-
-      await expect(configuration.composeDetoxConfig({})).rejects.toThrowError(
-        /ENOENT: no such file.*non-existent.json/
-      );
-    });
 
     it('should return a complete Detox config merged with the file configuration', async () => {
       const config = await configuration.composeDetoxConfig({
         cwd: path.join(__dirname, '__mocks__/configuration/detoxrc'),
-        selectedConfiguration: 'another',
+        configuration: 'another',
         override: {
           configurations: {
             another: {
@@ -97,5 +55,12 @@ describe('configuration', () => {
         }),
       });
     });
+  });
+});
+
+describe('throwOnEmptyBinaryPath', () => {
+  it('should throw an error', () => {
+    const { throwOnEmptyBinaryPath } = require('./index');
+    expect(throwOnEmptyBinaryPath).toThrowError(/binaryPath.*missing/);
   });
 });

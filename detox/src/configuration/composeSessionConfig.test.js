@@ -1,5 +1,12 @@
 describe('composeSessionConfig', () => {
-  const composeSessionConfig = (...args) => configuration._internals.composeSessionConfig(...args);
+  let composeSessionConfig;
+  let detoxConfig, deviceConfig;
+
+  beforeEach(() => {
+    composeSessionConfig = require('./composeSessionConfig');
+    detoxConfig = {};
+    deviceConfig = {};
+  });
 
   const compose = () => composeSessionConfig({
     detoxConfig,

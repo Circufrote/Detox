@@ -1,10 +1,9 @@
 const { cosmiconfig } = require('cosmiconfig');
+const explorer = cosmiconfig('detox')
 
-async function loadExternalConfig(detoxConfigPath, cwd) {
-  const explorer = cosmiconfig('detox')
-
-  return detoxConfigPath
-    ? await explorer.load(detoxConfigPath)
+async function loadExternalConfig({ configPath, cwd }) {
+  return configPath
+    ? await explorer.load(configPath)
     : await explorer.search(cwd);
 }
 

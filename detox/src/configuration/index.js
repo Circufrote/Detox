@@ -1,22 +1,29 @@
 const _ = require('lodash');
+const DetoxConfigError = require('../errors/DetoxConfigError');
 const DetoxRuntimeError = require('../errors/DetoxRuntimeError');
-
-const configUtils = require('./utils');
+const collectCliConfig = require('./collectCliConfig');
+const loadExternalConfig = require('./loadExternalConfig');
+const composeArtifactsConfig = require('./composeArtifactsConfig');
+const composeBehaviorConfig = require('./composeBehaviorConfig');
+const composeDeviceConfig = require('./composeDeviceConfig');
+const composeSessionConfig = require('./composeSessionConfig');
+const selectConfiguration = require('./selectConfiguration');
 
 async function composeDetoxConfig({
-  cwd = process.cwd(),
+  cwd,
   argv,
-  selectedConfiguration,
+  configuration,
   override,
   userParams,
 }) {
-  const cliConfig = collectCliConfig(argv);
-  const cosmiResult = await loadDetoxConfig(cliConfig.configPath, cwd);
+  const cliConfig = collectCliConfig({ argv });
+  const cosmiResult = await loadExternalConfig({
+    configPath: cliConfig.configPath,
+    cwd,
+  });
+
   const externalConfig = cosmiResult && cosmiResult.config;
-  const detoxConfig = _.merge(
-    externalConfig,
-    override,
-  );
+  const detoxConfig = _.merge({}, externalConfig, override);
 
   if (_.isEmpty(detoxConfig)) {
     throw new DetoxRuntimeError({
@@ -25,26 +32,26 @@ async function composeDetoxConfig({
     });
   }
 
-  if (argv.configuration) {
-    detoxConfig.selectedConfiguration = argv.configuration;
-  }
+  const deviceConfigName  = selectConfiguration({
+    detoxConfig,
+    cliConfig,
+    selectedConfiguration: configuration,
+  });
 
-  if (selectedConfiguration) {
-    detoxConfig.selectedConfiguration = selectedConfiguration;
-  }
-
-  const deviceConfig = composeDeviceConfig(detoxConfig);
-  const configurationName = _.findKey(detoxConfig.configurations, (config) => {
-    return config === deviceConfig;
+  const deviceConfig = composeDeviceConfig({
+    cliConfig,
+    rawDeviceConfig: detoxConfig.configurations[deviceConfigName],
   });
 
   const artifactsConfig = composeArtifactsConfig({
-    configurationName,
+    cliConfig,
+    configurationName: deviceConfigName,
     detoxConfig,
     deviceConfig,
   });
 
   const behaviorConfig = composeBehaviorConfig({
+    cliConfig,
     detoxConfig,
     deviceConfig,
     userParams,
@@ -57,7 +64,7 @@ async function composeDetoxConfig({
 
   return {
     meta: {
-      configuration: configurationName,
+      configuration: deviceConfigName,
       location: externalConfig.filepath,
     },
 
@@ -69,6 +76,9 @@ async function composeDetoxConfig({
 }
 
 module.exports = {
-  throwOnEmptyBinaryPath: configUtils.throwOnEmptyBinaryPath,
   composeDetoxConfig,
+
+  throwOnEmptyBinaryPath() {
+    throw new DetoxConfigError(`'binaryPath' property is missing, should hold the app binary path`);
+  },
 };
