@@ -3,7 +3,6 @@ const _ = require('lodash');
 const string = require('../../../../utils/string');
 
 class APKPath {
-
   static getTestApkPath(originalApkPath) {
     const originalApkPathObj = path.parse(originalApkPath);
     let tempPath = originalApkPathObj.dir.split(path.sep);
@@ -20,7 +19,13 @@ class APKPath {
       tempPath = _.dropRight(tempPath, 1); //flavorDimensions
     }
 
-    const testApkPath = path.join(tempPath.join(path.sep), 'androidTest', flavorDimensionsPath, buildType, `${originalApkPathObj.name}-androidTest${originalApkPathObj.ext}`);
+    // const testApkPath = path.join(tempPath.join(path.sep), 'androidTest', flavorDimensionsPath, buildType, `${originalApkPathObj.name}-androidTest${originalApkPathObj.ext}`)
+
+    let testApkPath =
+      buildType === 'debug'
+        ? 'android/app/build/outputs/apk/miamiDev/debug/rideon-miami-dev.apk'
+        : 'android/app/build/outputs/apk/miamiDev/release/rideon-miami-dev.apk';
+
     return testApkPath;
   }
 }
